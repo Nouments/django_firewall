@@ -1,0 +1,5 @@
+django-restframwork
+django-filters
+django-corsheaders
+mysqlclient
+mysqlclients

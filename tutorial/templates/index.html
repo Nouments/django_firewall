@@ -1,0 +1,328 @@
+ {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
+    <!-- <link rel="stylesheet" href="bootstrap-5.3.2/dist/css/bootstrap.min.css"> -->
+    <title>Iptables</title>
+    <style>
+
+        *{
+            box-sizing: border-box;
+        }
+        body{
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: lightgrey;
+            font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+            
+        }
+        h1{
+            text-align: center;
+            letter-spacing: 5px;
+            font-size: 25px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .line{
+            height: 0.8px;
+            width: 300px;
+            margin: 30px auto;
+            background-color: red;
+        }
+        .card{
+            margin: 20px 0;
+            width: 80%;
+            float: left;
+            padding: 10px 20px;
+            background-color: white;
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        
+        }
+        .card label{
+            font-size: 13px;
+        }
+        .card input[type="number"], .card select{
+            display: block;
+            border: none;
+            width: 100%;
+            border-bottom: 1px solid lightgray ;
+            margin-top: 5px;
+            padding: 10px 12px;
+            margin-bottom: 20px;
+            margin-left: 5px; 
+        }
+        .card select{
+            background-color: white;
+        }
+        .card input[type="reset"], .card input[type="submit"]{
+            float: right;
+            margin: 20px 5px;
+            font-weight: normal;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            background-color: black;
+            color: white;
+            border: none;
+            padding: 7px 20px;
+            transition: 0.3s;
+            border-radius: 3px;
+           
+        }
+        .card input[type="reset"]:hover, .card input[type="submit"]:hover{
+            background-color: lightgray;
+            color: black;
+            border-bottom: none;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+          }
+        #up{
+            margin-right: 10px;
+            overflow: hidden;
+          }
+         
+        #down{
+            margin-left: 10px;
+            height: 618px;
+        }
+        .clearfix{
+        content: "";
+        display: table;
+        clear: both;
+        }
+        footer{
+        background-color: #333;
+        color: white;
+        text-align: center;
+        margin-top: 30px;
+        padding: 40px;
+        font-size: 12px;
+        }
+        span{
+        color: red;
+        font-weight: bold;
+        font-size: 16px;
+        margin: 0 2px;
+        
+        }
+        @media screen and (max-width:900px) {
+            .card{
+                float: none;
+                width: 100%;
+            }
+            #down{
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<template id="tab">
+    <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+    </tr>
+</template>
+
+<body onload="appelerEndpoint()">
+    <h1>IPTABLES</h1>
+    <div class="line"></div>
+        <div class="card" id="up" >
+            <form action="POST" id="monFormulaire" style="margin-top: 10px;" >
+                <label for="act">Chaine</label>
+                <select name="act" id="act">
+                    <option value="-A">Ajouter</option>
+                    <option value="-D">supprimer</option>
+                </select>
+                <label for="act">Chaine</label>
+                <select name="ch" id="ch">
+                    <option value="INPUT">INPUT</option>
+                    <option value="OUTPUT">OUTPUT</option>
+                    <option value="FORWARD">FORWARD</option>
+                </select>
+                <label for="choose">Target</label>
+                <select name="targ" id="targ" required>
+                    <option value="DROP">DROP</option>
+                    <option value="REJECT">REJECT</option>
+                    <option value="ACCEPT">ACCEPT</option>
+                </select>             
+                <label for="dest">Destination</label>
+                <input type="text" placeholder="ip destination" id="dest" name="dest" required>
+                <label for="protocol">Protocol</label>
+               <select name="protocol" id="protocol" required>
+                <option value="icmp">ICMP</option>
+                <option value="ssh">SSH</option>
+                <option value="udp">udp</option>
+                <option value="tcp">tcp</option>
+               </select>
+              
+               <label for="port">Port</label >
+               <input type="number" id="port" name="port" >
+
+                <button type='submit'>Valider</button>
+            </form>
+        </div>
+        <div class="card" id="down" >
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Chaine</th>
+                        <th>Source</th>
+                        <th>Destination</th>
+                        <th>Protocol</th>
+                        <th>Port</th>
+                        <th>Target</th>
+                    </tr>
+                </thead>
+                <tbody id="vatany">
+                 
+                </tbody>
+              </table>
+        </div>
+        <div class="clearfix"></div>
+   <footer>
+    Powered by <span>&lt/Kaody&gt</span>
+   </footer>
+   <script>
+    function appelerEndpoint() {
+        // Remplacez l'URL de l'endpoint par celui que vous souhaitez appeler
+        var endpointUrl = 'http://0.0.0.0:8000/api/list/';
+    
+        // Effectuer la requête GET vers l'endpoint
+        fetch(endpointUrl)
+            .then(response => {
+                // Vérifier si la requête a réussi (statut 200)
+                if (!response.ok) {
+                    throw new Error('La requête a échoué avec le statut : ' + response.status);
+                }
+                // Retourner la réponse sous forme de JSON
+                return response.json();
+            })
+            .then(data => {
+    
+                // Parcourir les données et ajouter une ligne pour chaque ensemble de données
+                data.forEach((donne, index) => {
+                    const template = document.getElementById('tab');
+                    const clonedRow = template.content.cloneNode(true);
+                    const tbody = document.getElementById('vatany')
+    
+                   // alert(donne['prot']); // Afficher une alerte avec la propriété 'prot'
+    
+                    // Remplacer les contenus des cellules avec les données du serveur
+                    const cells = clonedRow.querySelectorAll('td');
+                    cells[0].textContent = donne['chaine'];
+                    cells[1].textContent = donne['source'];
+                    cells[2].textContent = donne['destination'];
+                    cells[3].textContent = donne['prot'];
+                    cells[4].textContent = donne['opt'];
+                    cells[5].textContent = donne['target'];
+    
+                    // Ajouter la ligne clonée au tbody
+                    tbody.appendChild(clonedRow);
+                });
+            })
+            .catch(error => {
+                // Gérer les erreurs de la requête
+                console.error('Erreur lors de la requête :', error);
+            });
+    }
+    
+    function setupFormSubmission() {
+        let formSubmitted = false;
+    
+        document.getElementById('monFormulaire').addEventListener('submit', function (event) {
+            // Vérifiez si le formulaire a déjà été soumis
+            if (formSubmitted) {
+                console.log('Le formulaire a déjà été soumis.');
+                event.preventDefault(); // Empêche le comportement par défaut du formulaire (rechargement de la page)
+                return;
+            }
+    
+            event.preventDefault(); // Empêche le comportement par défaut du formulaire (rechargement de la page)
+    
+            const act = document.getElementById('act').value;
+            const ch = document.getElementById('ch').value;
+            const dest = document.getElementById('dest').value;
+            const protocol = document.getElementById('protocol').value;
+            const port = document.getElementById('port').value;
+            const targ = document.getElementById('targ').value;
+           
+    
+            const formData = {
+                act: act,
+                chaine: ch,
+                dest: dest,
+                protocol: protocol,
+                port: port,
+                target: targ,
+            };
+    
+            console.log('Données du formulaire en JSON:', formData);
+    
+            // Envoyer les données à l'endpoint
+            sendDataToEndpoint(formData);
+    
+            // Définir le drapeau pour indiquer que le formulaire a été soumis
+            formSubmitted = true;
+        });
+    
+        function sendDataToEndpoint(formData) {
+            const endpointUrl = 'http://0.0.0.0:8000/api/test/';
+             const template = document.getElementById('tab');
+            const clonedRow = template.content.cloneNode(true);
+            const tbody = document.getElementById('vatany')
+    
+            fetch(endpointUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('La requête a échoué avec le statut : ' + response.status);
+
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Données envoyées avec succès :', data);
+                 if (formData['act']=='-A'){
+                    const cells = clonedRow.querySelectorAll('td');
+                    cells[0].textContent = formData['chaine'];
+                    cells[1].textContent = 'anywhere';
+                    cells[2].textContent = formData['dest'];
+                    cells[3].textContent = formData['protocol'];
+                    cells[4].textContent = '--';
+                    cells[5].textContent = formData['target'];
+    
+                    // Ajouter la ligne clonée au tbody
+                    tbody.appendChild(clonedRow);
+                 }else{
+                    tbody.innerHTML='';
+                    appelerEndpoint()
+                 }
+                formSubmitted = false;
+            })
+            .catch(error => {
+                console.error('Erreur lors de l\'envoi des données :', error);
+            });
+        }
+    }
+    
+    // Appeler la fonction pour configurer la soumission du formulaire
+    setupFormSubmission();
+    
+    
+    
+   </script>
+</body>
+</html>
